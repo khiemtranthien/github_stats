@@ -30,7 +30,7 @@ public class AppProperties {
         return LazyHolder.INSTANCE;
     }
 
-    public String getProperty(String key){
+    public String get(String key){
         return configProp.getProperty(key);
     }
 
@@ -38,7 +38,7 @@ public class AppProperties {
         return configProp.stringPropertyNames();
     }
 
-    public boolean containsKey(String key){
+    public boolean contains(String key){
         return configProp.containsKey(key);
     }
 }
