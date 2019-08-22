@@ -3,7 +3,9 @@ package com.ttk.datasouce;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 import com.ttk.Main;
-import com.ttk.repo.MongoDBRepo;
+import com.ttk.repo.MongoBaseRepo;
+import com.ttk.repo.RepoFactory;
+import com.ttk.utils.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
@@ -22,13 +24,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class Ingestor {
+public class FullIngestor {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
-    MongoDBRepo repo;
+    MongoBaseRepo repo;
 
-    public Ingestor() {
-        repo = new MongoDBRepo();
+    public FullIngestor() {
+        repo = RepoFactory.getRepo(Constants.ALL_EVENTS);
     }
 
     private Callable<String> callable(String fileName) {

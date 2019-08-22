@@ -93,7 +93,7 @@ public class Datasouce {
         assureValid();
 
         AppProperties appConfig = AppProperties.getInstance();
-        String dataFolder = appConfig.get("data.folder");
+        String dataFolder = appConfig.get("data.jsonFolder");
 
         List<String> fileNames = generateJsonFileNamesFromConfigDateRange();
         List<String> filePaths = fileNames.stream().map(name -> dataFolder + name).collect(Collectors.toList());

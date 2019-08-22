@@ -1,6 +1,5 @@
 package com.ttk.repo;
 
-import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
@@ -11,33 +10,32 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.util.JSON;
 import com.ttk.utils.AppProperties;
-import com.ttk.utils.JavascriptReader;
+import com.ttk.utils.JavascriptUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
 import javax.script.ScriptException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class MongoDBRepo {
-    private static final Logger LOGGER = LogManager.getLogger(MongoDBRepo.class.getName());
+public abstract class MongoBaseRepo {
+    private static final Logger LOGGER = LogManager.getLogger(MongoBaseRepo.class.getName());
 
     MongoClient mongoClient;
     MongoDatabase database;
+
     MongoCollection<Document> collection;
 
-    public MongoDBRepo() {
+    public MongoBaseRepo() {
         AppProperties appConfig = AppProperties.getInstance();
         String mongoHost = appConfig.get("mongo.host");
         int mongoPort = Integer.valueOf(appConfig.get("mongo.port"));
+        String db = appConfig.get("mongo.db");
 
         mongoClient = new MongoClient(mongoHost, mongoPort);
-        database = mongoClient.getDatabase("GHArchive");
-        collection = database.getCollection("githubEvents");
+        database = mongoClient.getDatabase(db);
     }
 
     public void upsert(Document eventData) throws IllegalArgumentException {
@@ -69,7 +67,7 @@ public class MongoDBRepo {
     public List<Document> parseJsonString() throws ScriptException, NoSuchMethodException {
         List<Document> pipline = new ArrayList<>();
 
-        String jsonStr = JavascriptReader.getQueryString("push.js");
+        String jsonStr = JavascriptUtil.getQueryString("push.js");
         BasicDBList jsonArray = (BasicDBList)JSON.parse(jsonStr);
         jsonArray.stream().map(obj -> ((DBObject) obj).toMap()).forEach((obj) -> {
             Document doc = new Document(obj);
@@ -78,9 +76,5 @@ public class MongoDBRepo {
         });
 
         return pipline;
-    }
-
-    public static void main(String[] args) throws ScriptException, NoSuchMethodException {
-        new MongoDBRepo().aggregation();
     }
 }
