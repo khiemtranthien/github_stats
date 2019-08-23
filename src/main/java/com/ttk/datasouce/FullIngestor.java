@@ -48,7 +48,7 @@ public class FullIngestor {
 
     public void run() {
         try {
-            List<String> files = Datasouce.getDesiredJsonFilesForIngestion();
+            List<String> files = DatasouceHelper.getDesiredJsonFilesForIngestion();
 
             ExecutorService executor = Executors.newFixedThreadPool(5);
 

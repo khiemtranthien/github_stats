@@ -1,8 +1,10 @@
 package com.ttk.datasouce;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 import com.ttk.Main;
+import com.ttk.repo.GitRepoRepo;
 import com.ttk.repo.MongoBaseRepo;
 import com.ttk.repo.RepoFactory;
 import com.ttk.utils.AppProperties;
@@ -27,10 +29,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class EventTypeIngestor {
+public class GitRepoIngestor {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     MongoBaseRepo repo;
+
+    public GitRepoIngestor() {
+        repo = new GitRepoRepo();
+    }
 
     private Callable<String> callable(String jsonFileName, String eventType) {
         return () -> {
@@ -57,7 +63,7 @@ public class EventTypeIngestor {
                     throw new FileNotFoundException(String.format("%s: File not found or not a valid file", outputFilePath));
                 }
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOGGER.error(e);
                 return String.format("Insert file %s failed. Error: %s", jsonFileName, e.getMessage());
             }
@@ -65,15 +71,14 @@ public class EventTypeIngestor {
         };
     }
 
-    public void run(String eventType, String dateFrom, String dateTo) {
+    public void run(String dateFrom, String dateTo) {
+        String eventType = Constants.PUSH_EVENT;
+
         if(!Constants.EVENT_TYPES.contains(eventType)) {
             throw new IllegalArgumentException(String.format("Event type: %s not found in check list", eventType));
         }
 
-        LOGGER.info(String.format("Ingest for event: %s", eventType));
-
-        LOGGER.info("Init repo");
-        repo = RepoFactory.getRepo(eventType);
+        LOGGER.info(String.format("Ingest Git Repo from %s to %s", dateFrom, dateTo));
 
         try {
             List<String> requiredFileNames = DatasouceHelper.generateJsonFileNamesForDateRange(dateFrom, dateTo);
@@ -122,11 +127,9 @@ public class EventTypeIngestor {
 
             stream.map(str -> (DBObject) JSON.parse(str)).forEach((dbObject) -> {
                 if (dbObject.get("type").equals(eventType)) {
-                    Document eventData = new Document(dbObject.toMap());
-                    Instant created_ts = Instant.parse((String) eventData.get("created_at"));
-                    eventData.put("created_at", Date.from(created_ts));
-
-                    repo.upsert(eventData);
+                    BasicDBObject repoObj = (BasicDBObject) dbObject.get("repo");
+                    Document doc = new Document(repoObj.toMap());
+                    repo.upsert(doc);
                 }
             });
         }

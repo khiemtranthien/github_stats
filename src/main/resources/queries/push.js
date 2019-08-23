@@ -18,6 +18,6 @@ var query = [
     { $sort : { distinctCount : -1 } }
 ];
 
-function getQuery() {
+function RepoPushDaily() {
     return JSON.stringify(query);
 }

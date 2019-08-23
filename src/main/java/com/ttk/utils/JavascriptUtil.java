@@ -8,20 +8,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class JavascriptUtil {
-    public static String getQueryString(String fileName) throws ScriptException, NoSuchMethodException {
+    public static String getQueryString(String fileName, String queryName) throws ScriptException, NoSuchMethodException {
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 
         InputStream in = JavascriptUtil.class.getClassLoader().getResourceAsStream(String.format("queries/%s", fileName));
         engine.eval(new InputStreamReader(in));
 
         Invocable invocable = (Invocable) engine;
-        Object result = invocable.invokeFunction("getQuery");
+        Object result = invocable.invokeFunction(queryName);
 
         return String.valueOf(result);
     }
 
     public static void main(String[] args) throws Exception {
-        String query = JavascriptUtil.getQueryString("push.js");
+        String query = JavascriptUtil.getQueryString("push.js", "RepoPushDaily");
         System.out.print(query);
     }
 }

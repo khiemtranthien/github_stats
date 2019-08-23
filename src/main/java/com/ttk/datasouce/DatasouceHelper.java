@@ -1,6 +1,5 @@
 package com.ttk.datasouce;
 
-import com.ttk.Main;
 import com.ttk.utils.AppProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,8 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Datasouce {
-    private static final Logger LOGGER = LogManager.getLogger(Datasouce.class.getName());
+public class DatasouceHelper {
+    private static final Logger LOGGER = LogManager.getLogger(DatasouceHelper.class.getName());
 
     /*
     Assure json files are downloaded completely for config date range
@@ -42,7 +41,7 @@ public class Datasouce {
 
             throw new Exception("Datasource is invalid");
         } else {
-            LOGGER.info("Datasouce is OK");
+            LOGGER.info("DatasouceHelper is OK");
         }
     }
 
@@ -55,6 +54,24 @@ public class Datasouce {
 
         LocalDateTime dateSince = LocalDate.parse(configDateFrom, simpleFmt).atStartOfDay();
         LocalDateTime dateUntil = LocalDate.parse(configDateTo, simpleFmt).atStartOfDay();
+
+        List<String> fileNames = new ArrayList<>();
+        while (dateSince.isBefore(dateUntil)) {
+            String fileName = String.format("%d-%02d-%02d-%d.json",
+                    dateSince.getYear(), dateSince.getMonth().getValue(),
+                    dateSince.getDayOfMonth(), dateSince.getHour());
+            fileNames.add(fileName);
+
+            dateSince = dateSince.plus(1, ChronoUnit.HOURS);
+        }
+        return fileNames;
+    }
+
+    public static List<String> generateJsonFileNamesForDateRange(String dateFrom, String dateTo) {
+        DateTimeFormatter simpleFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        LocalDateTime dateSince = LocalDate.parse(dateFrom, simpleFmt).atStartOfDay();
+        LocalDateTime dateUntil = LocalDate.parse(dateTo, simpleFmt).atStartOfDay();
 
         List<String> fileNames = new ArrayList<>();
         while (dateSince.isBefore(dateUntil)) {
