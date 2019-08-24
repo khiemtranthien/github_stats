@@ -36,6 +36,8 @@ cd "$BASE_FOLDER/download/"
 
 cp *.gz "$BASE_FOLDER/zip/"
 
-gunzip *.gz
+#gunzip *.gz
 
-mv *.json "$BASE_FOLDER/json/"
+#mv *.json "$BASE_FOLDER/json/"
+
+rm *.gz

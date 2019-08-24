@@ -8,14 +8,15 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.util.JSON;
 import com.ttk.utils.AppProperties;
 import com.ttk.utils.JavascriptUtil;
+import org.apache.commons.text.StringSubstitutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
 import javax.script.ScriptException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public abstract class MongoBaseRepo {
     private static final Logger LOGGER = LogManager.getLogger(MongoBaseRepo.class.getName());
@@ -35,15 +36,30 @@ public abstract class MongoBaseRepo {
         database = mongoClient.getDatabase(db);
     }
 
-    public FindIterable getIterable(Document where) {
-        return getIterable(where, null, null);
+    /**
+     * Return the Monggo FindIterable which is helpful to do paging large result
+     * @param where - Document object
+     * @return FindIterable
+     */
+    public FindIterable iterableGet(Document where) {
+        return iterableGet(where, null, null);
     }
 
-    public FindIterable getIterable(Document where, Document projection) {
-        return getIterable(where, projection, null);
+    /**
+     * Return the Monggo FindIterable which is helpful to do paging large result
+     * @param where - Document object
+     * @return FindIterable
+     */
+    public FindIterable iterableGet(Document where, Document projection) {
+        return iterableGet(where, projection, null);
     }
 
-    public FindIterable getIterable(Document where, Document projection, Document sort) {
+    /**
+     * Return the Monggo FindIterable which is helpful to do paging large result
+     * @param where - Document object
+     * @return FindIterable
+     */
+    public FindIterable iterableGet(Document where, Document projection, Document sort) {
         FindIterable query;
 
         if(where != null) {
@@ -63,15 +79,15 @@ public abstract class MongoBaseRepo {
         return query;
     }
 
-    public List get(Document where) {
+    public List<Document> get(Document where) {
         return get(where, null, null);
     }
 
-    public List get(Document where, Document projection) {
+    public List<Document> get(Document where, Document projection) {
         return get(where, projection, null);
     }
 
-    public List get(Document where, Document projection, Document sort) {
+    public List<Document> get(Document where, Document projection, Document sort) {
         FindIterable query;
 
         if(where != null) {
@@ -112,10 +128,25 @@ public abstract class MongoBaseRepo {
         return getResponse(cursor);
     }
 
-    public List<Document> parseQueryString(String queryFile, String queryName) throws ScriptException, NoSuchMethodException {
+    /**
+     * Monggo aggregation query is stored in project's resources folder group by event type file name.
+     * The query may have some parameters placeholder, if any, this function will populate it.
+     * Output is a full JSON query string
+     * @param queryFile - Event type file in resources folder
+     * @param queryName - One event type file has several queries. Specify the query name you want to get
+     * @param params - A map parameters for query string. Look at query string to know the parameter name
+     * @return JSON query string
+     * @throws ScriptException
+     * @throws NoSuchMethodException
+     */
+    public List<Document> parseQueryString(String queryFile, String queryName, Map<String, Object> params) throws ScriptException, NoSuchMethodException {
         List<Document> pipline = new ArrayList<>();
 
         String jsonStr = JavascriptUtil.getQueryString(queryFile, queryName);
+        if(params != null) {
+            jsonStr = populateParams(jsonStr, params);
+        }
+
         BasicDBList jsonArray = (BasicDBList)JSON.parse(jsonStr);
         jsonArray.stream().map(obj -> ((DBObject) obj).toMap()).forEach((obj) -> {
             Document doc = new Document(obj);
@@ -123,6 +154,55 @@ public abstract class MongoBaseRepo {
         });
 
         return pipline;
+    }
+
+    public String populateParams(String jsonQuery, Map<String, Object> params) {
+        Map<String, String> newParams = new HashMap<>();
+
+        params.forEach((k, v) -> {
+            String[] pairs = k.split(":");
+
+            String newVal;
+
+            if(pairs.length > 1) {
+                String paramType = pairs[1];
+
+                if (paramType.equals("str")) {
+                    newVal = String.format("\"%s\"", v);
+
+                } else if (paramType.equals("num")) {
+                    newVal = String.valueOf(v);
+
+                } else if (paramType.equals("arrayStr")) {
+                    List castListV = (List)v;
+                    newVal = castListV.stream().map(str -> String.format("\"%s\"", str)).collect(Collectors.joining(",")).toString();
+
+                } else if (paramType.equals("arrayNum")) {
+                    List castListV = (List)v;
+                    newVal = castListV.stream().map(String::valueOf).collect(Collectors.joining(",")).toString();
+
+                } else {
+                    throw new IllegalStateException("param type invalid");
+                }
+            } else {
+                if (v instanceof String) {
+                    newVal = String.format("\"%s\"", v);
+
+                } else if(v instanceof Number) {
+                    newVal = String.valueOf(v);
+
+                } else {
+                    throw new IllegalStateException("value type invalid");
+                }
+            }
+
+            newParams.put(pairs[0], newVal);
+        });
+
+        StringSubstitutor sub = new StringSubstitutor(newParams, "\"%(", ")\"");
+
+        String fmtQuery = sub.replace(jsonQuery);
+        return fmtQuery;
     }
 
     public List<Document> getResponse(MongoCursor cursor) {

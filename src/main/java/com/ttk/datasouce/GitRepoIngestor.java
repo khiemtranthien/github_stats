@@ -38,6 +38,13 @@ public class GitRepoIngestor {
         repo = new GitRepoRepo();
     }
 
+    public static void main(String[] args) {
+        String dateFrom = "2019-08-01";
+        String dateTo = "2019-08-10";
+
+        new GitRepoIngestor().run(dateFrom, dateTo);
+    }
+
     private Callable<String> callable(String jsonFileName, String eventType) {
         return () -> {
             LOGGER.info(String.format("Ingest file: %s", jsonFileName));
@@ -128,8 +135,14 @@ public class GitRepoIngestor {
             stream.map(str -> (DBObject) JSON.parse(str)).forEach((dbObject) -> {
                 if (dbObject.get("type").equals(eventType)) {
                     BasicDBObject repoObj = (BasicDBObject) dbObject.get("repo");
-                    Document doc = new Document(repoObj.toMap());
-                    repo.upsert(doc);
+
+                    Document repoDoc = new Document(repoObj.toMap());
+
+                    if(dbObject.containsField("org")) {
+                        BasicDBObject orgObj = (BasicDBObject) dbObject.get("org");
+                        repoDoc.append("org", new Document(orgObj.toMap()));
+                    }
+                    repo.upsert(repoDoc);
                 }
             });
         }

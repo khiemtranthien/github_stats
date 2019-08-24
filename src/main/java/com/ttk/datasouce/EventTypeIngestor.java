@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -31,6 +32,24 @@ public class EventTypeIngestor {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     MongoBaseRepo repo;
+
+    public static void main(String[] args) {
+        EventTypeIngestor app = new EventTypeIngestor();
+        List<String> ingestEvents = Arrays.asList(
+//                Constants.RELEASE_EVENT,
+//                Constants.PUSH_EVENT,
+//                Constants.FORK_EVENT,
+//                Constants.ISSUES_EVENT,
+                Constants.PULL_REQUEST_EVENT,
+                Constants.PULL_REQUEST_REVIEW_COMMENT_EVENT
+        );
+
+        for(String eventType: ingestEvents) {
+            String dateFrom = "2019-07-20";
+            String dateTo = "2019-07-21";
+            app.run(eventType, dateFrom, dateTo);
+        }
+    }
 
     private Callable<String> callable(String jsonFileName, String eventType) {
         return () -> {

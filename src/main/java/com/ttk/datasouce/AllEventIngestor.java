@@ -24,13 +24,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class FullIngestor {
+public class AllEventIngestor {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     MongoBaseRepo repo;
 
-    public FullIngestor() {
+    public AllEventIngestor() {
         repo = RepoFactory.getRepo(Constants.ALL_EVENTS);
+    }
+
+    public static void main(String[] args) {
+        new AllEventIngestor().run();
     }
 
     private Callable<String> callable(String fileName) {
