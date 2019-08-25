@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
+import javax.script.ScriptException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -20,11 +21,11 @@ public class RepoHealthMiner extends BaseMiner {
         gitRepoStatsRepo = new GitRepoStatsRepo();
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, ScriptException, NoSuchMethodException {
         new RepoHealthMiner().run();
     }
 
-    public void run() throws InterruptedException {
+    public void run() throws InterruptedException, ScriptException, NoSuchMethodException {
          /* For each repo, health score formula:
         health_score = push_count/max_push * release_count/max_release * contributor_count/max_contributor
          */
@@ -53,7 +54,7 @@ public class RepoHealthMiner extends BaseMiner {
 
             cursor = allRepos.skip(pageSize * page).limit(pageSize);
 
-            LOGGER.info(String.format("Mining counter: %d", page * pageSize));
+            LOGGER.info(String.format("Calculate counter: %d", page * pageSize));
             page += 1;
         }
 
@@ -84,11 +85,13 @@ public class RepoHealthMiner extends BaseMiner {
 
     private Callable<String> callable(List<Document> repoPartition, Map<String, Integer> maxParamsMap) {
         return () -> {
-            LOGGER.info(String.format("Mining partition %d repo(s)", repoPartition.size()));
+            LOGGER.info(String.format("Calculate partition %d repo(s)", repoPartition.size()));
 
             Integer maxPush = maxParamsMap.get("maxPush");
-            Integer maxReleaseCount = maxParamsMap.get("maxReleaseCount");
-            Integer maxContributorCount = maxParamsMap.get("maxContributorCount");
+            Integer maxRelease = maxParamsMap.get("maxReleaseCount");
+            Integer maxContributor = maxParamsMap.get("maxContributorCount");
+
+            LOGGER.info(String.format("Max Push: %d, Max Release: %d, Max Contributor: %d", maxPush, maxRelease, maxContributor));
 
             try {
                 repoPartition.forEach(doc -> {
@@ -96,7 +99,7 @@ public class RepoHealthMiner extends BaseMiner {
                     Integer release = (Integer)doc.get("release");
                     Integer contributor = (Integer)doc.get("contributor");
 
-                    Double healthScore = push/(double)maxPush * release/(double)maxReleaseCount * contributor/(double)maxContributorCount;
+                    Double healthScore = push/(double)maxPush * release/(double)maxRelease * contributor/(double)maxContributor;
 
                     Integer repoId = (Integer)doc.get("id");
 
@@ -109,9 +112,9 @@ public class RepoHealthMiner extends BaseMiner {
 
             } catch (Exception e) {
                 LOGGER.error(e);
-                return String.format("Mining failed. Error: %s", e.getMessage());
+                return String.format("Calculate failed. Error: %s", e.getMessage());
             }
-            return String.format("Mining %d repo(s) successfully", repoPartition.size());
+            return String.format("Calculate %d repo(s) successfully", repoPartition.size());
         };
     }
 }

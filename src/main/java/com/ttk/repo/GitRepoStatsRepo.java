@@ -2,6 +2,10 @@ package com.ttk.repo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bson.Document;
+
+import javax.script.ScriptException;
+import java.util.List;
 
 public class GitRepoStatsRepo extends MongoBaseRepo {
     private static final Logger LOGGER = LogManager.getLogger(GitRepoStatsRepo.class.getName());
@@ -11,15 +15,50 @@ public class GitRepoStatsRepo extends MongoBaseRepo {
         collection = database.getCollection("gitRepoStats");
     }
 
-    public Integer getMaxPushCount() {
-        return 100;
+    public Integer getMaxPushCount() throws ScriptException, NoSuchMethodException {
+
+        List<Document> pipeline = parseQueryString("repoStats.js", "GetMaxPush", null);
+
+        LOGGER.debug(String.format("Pipeline %s", pipeline));
+
+        List<Document> result = aggregation(pipeline);
+
+        Document row = result.get(0);
+        Integer max = (Integer)row.get("max");
+
+        return max;
     }
 
-    public Integer getMaxReleaseCount() {
-        return 100;
+    public Integer getMaxReleaseCount() throws ScriptException, NoSuchMethodException {
+        List<Document> pipeline = parseQueryString("repoStats.js", "GetMaxRelease", null);
+
+        LOGGER.debug(String.format("Pipeline %s", pipeline));
+
+        List<Document> result = aggregation(pipeline);
+
+        Document row = result.get(0);
+        Integer max = (Integer)row.get("max");
+
+        return max;
     }
 
-    public Integer getMaxContributorCount() {
-        return 100;
+    public Integer getMaxContributorCount() throws ScriptException, NoSuchMethodException {
+
+        List<Document> pipeline = parseQueryString("repoStats.js", "GetMaxContributor", null);
+
+        LOGGER.debug(String.format("Pipeline %s", pipeline));
+
+        List<Document> result = aggregation(pipeline);
+
+        Document row = result.get(0);
+        Integer max = (Integer)row.get("max");
+
+        return max;
     }
+
+    public static void main(String[] args) throws ScriptException, NoSuchMethodException {
+        Integer result = new GitRepoStatsRepo().getMaxContributorCount();
+        LOGGER.info(result);
+    }
+
 }

@@ -23,17 +23,17 @@ function AllRepoPushDaily() {
 
 function TotalPushByRepoId() {
     var TotalPushByRepoIdQuery = [
-        {
-            "$match" : {"repo.id" : { $in: ["%(repoIds)"] } }
-        },
-        {
+         {
+             "$match" : {"repo.id" : { $in: ["%(repoIds)"] } }
+         },
+         {
 
-            $group : {
-                _id: "$repo.id",
-                count:{$sum:1}
-             }
-        },
-    ];
+             $group : {
+                 _id: "$repo.id",
+                 count:{$sum:1}
+              }
+         },
+     ];
 
-    return JSON.stringify(TotalPushByRepoIdQuery);
-}
+     return JSON.stringify(TotalPushByRepoIdQuery);
+ }

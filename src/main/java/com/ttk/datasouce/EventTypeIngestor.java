@@ -36,17 +36,17 @@ public class EventTypeIngestor {
     public static void main(String[] args) {
         EventTypeIngestor app = new EventTypeIngestor();
         List<String> ingestEvents = Arrays.asList(
-//                Constants.RELEASE_EVENT,
-//                Constants.PUSH_EVENT,
-//                Constants.FORK_EVENT,
-//                Constants.ISSUES_EVENT,
+                Constants.RELEASE_EVENT,
+                Constants.PUSH_EVENT,
+                Constants.FORK_EVENT,
+                Constants.ISSUES_EVENT,
                 Constants.PULL_REQUEST_EVENT,
                 Constants.PULL_REQUEST_REVIEW_COMMENT_EVENT
         );
 
         for(String eventType: ingestEvents) {
-            String dateFrom = "2019-07-20";
-            String dateTo = "2019-07-21";
+            String dateFrom = "2019-08-18";
+            String dateTo = "2019-08-20";
             app.run(eventType, dateFrom, dateTo);
         }
     }

@@ -39,8 +39,8 @@ public class GitRepoIngestor {
     }
 
     public static void main(String[] args) {
-        String dateFrom = "2019-08-01";
-        String dateTo = "2019-08-10";
+        String dateFrom = "2019-08-18";
+        String dateTo = "2019-08-20";
 
         new GitRepoIngestor().run(dateFrom, dateTo);
     }
