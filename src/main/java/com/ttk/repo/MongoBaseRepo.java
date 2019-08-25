@@ -139,7 +139,7 @@ public abstract class MongoBaseRepo {
      * @throws ScriptException
      * @throws NoSuchMethodException
      */
-    public List<Document> parseQueryString(String queryFile, String queryName, Map<String, Object> params) throws ScriptException, NoSuchMethodException {
+    protected List<Document> parseQueryString(String queryFile, String queryName, Map<String, Object> params) throws ScriptException, NoSuchMethodException {
         List<Document> pipline = new ArrayList<>();
 
         String jsonStr = JavascriptUtil.getQueryString(queryFile, queryName);
@@ -156,7 +156,7 @@ public abstract class MongoBaseRepo {
         return pipline;
     }
 
-    public String populateParams(String jsonQuery, Map<String, Object> params) {
+    private String populateParams(String jsonQuery, Map<String, Object> params) {
         Map<String, String> newParams = new HashMap<>();
 
         params.forEach((k, v) -> {

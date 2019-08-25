@@ -89,7 +89,7 @@ public class AllEventIngestor {
         }
     }
 
-    public void ingest(String fileName) throws IOException {
+    private void ingest(String fileName) throws IOException {
         Path myFile = Paths.get(fileName);
 
         try (Stream<String> stream = Files.lines(myFile)) {

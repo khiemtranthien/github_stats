@@ -24,14 +24,14 @@ Setup & run
 3. Download data for last 30 days (ex: 2019-07-20 to 2019-08-20) to **zip** folder
 4. Can use download_archive_files.sh
 5. Ingest event data to DB:
-    * Update EventTypeIngestor **main** function the eventType and the date range to ingest
+    * Update *datasource/EventTypeIngestor.java* **main** function the eventType and the date range to ingest
     * Note: don't set the range too long, json file extracted will consume all your disk space
     
 6. After the ingest data complete, create index for each collection in Monggo DB
-7. Update date range and run datasource/GitRepoIngestor.java to ingest Git Repo info 
-8. Run mining/GitRepoStatsMiner.java to mining repo statistic like total push, release, contributor, etc
-9. Run mining/RepoHealthMiner.java to calculate repo health score
-10. Run report/RepoHealthReport to get top 1000 healthiest repos in CSV format
+7. Update date range in **main** and run *datasource/GitRepoIngestor.java* to ingest Git Repo info 
+8. Run *mining/GitRepoStatsMiner.java* to mining repo statistic like total push, release, contributor, etc
+9. Run *mining/RepoHealthMiner.java* to calculate repo health score
+10. Run *report/RepoHealthReport.java* to get top healthiest repos in CSV format (change the size in *app.properties* file)
 
 Tech stack
 ---

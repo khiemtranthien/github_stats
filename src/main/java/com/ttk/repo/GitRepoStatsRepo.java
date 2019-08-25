@@ -1,5 +1,6 @@
 package com.ttk.repo;
 
+import com.mongodb.client.FindIterable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
@@ -54,6 +55,11 @@ public class GitRepoStatsRepo extends MongoBaseRepo {
         Integer max = (Integer)row.get("max");
 
         return max;
+    }
+
+    public List<Document> getTopHealthiestRepo(Integer size) {
+        FindIterable<Document> queryIterator = collection.find().sort(new Document("health_score", -1)).limit(size);
+        return getResponse(queryIterator.iterator());
     }
 
     public static void main(String[] args) throws ScriptException, NoSuchMethodException {

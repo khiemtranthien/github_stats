@@ -31,13 +31,15 @@ public class RepoHealthMiner extends BaseMiner {
          */
 
         Integer maxPush = gitRepoStatsRepo.getMaxPushCount();
-        Integer maxReleaseCount = gitRepoStatsRepo.getMaxReleaseCount();
-        Integer maxContributorCount = gitRepoStatsRepo.getMaxContributorCount();
+        Integer maxRelease = gitRepoStatsRepo.getMaxReleaseCount();
+        Integer maxContributor = gitRepoStatsRepo.getMaxContributorCount();
 
         Map<String, Integer> maxParamsMap = new HashMap<>();
         maxParamsMap.put("maxPush", maxPush);
-        maxParamsMap.put("maxReleaseCount", maxReleaseCount);
-        maxParamsMap.put("maxContributorCount", maxContributorCount);
+        maxParamsMap.put("maxRelease", maxRelease);
+        maxParamsMap.put("maxContributor", maxContributor);
+
+        LOGGER.info(String.format("Max Push: %d, Max Release: %d, Max Contributor: %d", maxPush, maxRelease, maxContributor));
 
         Document where = null;  // set where = null to get all rows
         FindIterable allRepos = gitRepoStatsRepo.iterableGet(where);
@@ -62,7 +64,7 @@ public class RepoHealthMiner extends BaseMiner {
         shutdownExecutor();
     }
 
-    public void calculateHealthScore(List<Document> repos, Map<String, Integer> maxParamsMap) throws InterruptedException {
+    private void calculateHealthScore(List<Document> repos, Map<String, Integer> maxParamsMap) throws InterruptedException {
         List<List<Document>> partitions = ListUtils.partition(repos, 100);
 
         List<Callable<String>> callables = new ArrayList<>();
@@ -88,10 +90,8 @@ public class RepoHealthMiner extends BaseMiner {
             LOGGER.info(String.format("Calculate partition %d repo(s)", repoPartition.size()));
 
             Integer maxPush = maxParamsMap.get("maxPush");
-            Integer maxRelease = maxParamsMap.get("maxReleaseCount");
-            Integer maxContributor = maxParamsMap.get("maxContributorCount");
-
-            LOGGER.info(String.format("Max Push: %d, Max Release: %d, Max Contributor: %d", maxPush, maxRelease, maxContributor));
+            Integer maxRelease = maxParamsMap.get("maxRelease");
+            Integer maxContributor = maxParamsMap.get("maxContributor");
 
             try {
                 repoPartition.forEach(doc -> {

@@ -127,7 +127,7 @@ public class GitRepoIngestor {
         LOGGER.info("Done.");
     }
 
-    public void ingest(String filePath, String eventType) throws IOException {
+    private void ingest(String filePath, String eventType) throws IOException {
         Path myFile = Paths.get(filePath);
 
         try (Stream<String> stream = Files.lines(myFile)) {

@@ -64,7 +64,7 @@ public class GitRepoStatsMiner extends BaseMiner {
         shutdownExecutor();
     }
 
-    public void getRepoStats(List<Document> repos) throws InterruptedException {
+    private void getRepoStats(List<Document> repos) throws InterruptedException {
         // split repos for each thread in executor
         List<List<Document>> partitions = ListUtils.partition(repos, 100);
 
@@ -114,7 +114,7 @@ public class GitRepoStatsMiner extends BaseMiner {
         };
     }
 
-    public Map<Integer, Integer> countPush(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
+    private Map<Integer, Integer> countPush(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
         List<Document> pushCountResult = pushEventRepo.countPushByRepoIds(repoIds);
 
         Map<Integer, Integer> retMap = new HashMap<>();
@@ -132,7 +132,7 @@ public class GitRepoStatsMiner extends BaseMiner {
         return retMap;
     }
 
-    public Map<Integer, Integer> countRelease(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
+    private Map<Integer, Integer> countRelease(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
         List<Document> releaseCountResult = releaseEventRepo.countReleaseByRepoIds(repoIds);
 
         Map<Integer, Integer> retMap = new HashMap<>();
@@ -150,7 +150,7 @@ public class GitRepoStatsMiner extends BaseMiner {
         return retMap;
     }
 
-    public Map<Integer, Integer> countContributor(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
+    private Map<Integer, Integer> countContributor(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
         List<Document> contributorCountResult = forkEventRepo.countForkByRepoIds(repoIds);
         Map<Integer, Integer> retMap = new HashMap<>();
         contributorCountResult.forEach(doc -> {
