@@ -45,8 +45,8 @@ public class EventTypeIngestor {
         );
 
         for(String eventType: ingestEvents) {
-            String dateFrom = "2019-08-18";
-            String dateTo = "2019-08-20";
+            String dateFrom = "2019-08-15";
+            String dateTo = "2019-08-17";
             app.run(eventType, dateFrom, dateTo);
         }
     }
