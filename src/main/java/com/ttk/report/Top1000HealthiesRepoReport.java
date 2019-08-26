@@ -1,6 +1,5 @@
 package com.ttk.report;
 
-import com.ttk.mining.RepoHealthMiner;
 import com.ttk.repo.GitRepoRepo;
 import com.ttk.repo.GitRepoStatsRepo;
 import com.ttk.utils.AppProperties;
@@ -24,6 +23,15 @@ public class Top1000HealthiesRepoReport {
 
         this.gitRepoStatsRepo = new GitRepoStatsRepo();
         this.gitRepoRepo = new GitRepoRepo();
+    }
+
+    public static void main(String[] args) {
+        try {
+            new Top1000HealthiesRepoReport().run();
+
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     public void run() throws IOException {
@@ -59,10 +67,19 @@ public class Top1000HealthiesRepoReport {
             Integer pushCount = repo.getInteger("push");
             Integer releaseCount = repo.getInteger("release");
             Integer contributorCount = repo.getInteger("contributor");
+            Double issueOpenedAvg = repo.getDouble("issue_opened_avg");
 
             Double healthScore = repo.getDouble("health_score");
 
-            String[] rowData = new String[] {orgName, repoName, String.valueOf(healthScore), String.valueOf(pushCount), String.valueOf(releaseCount), String.valueOf(contributorCount)};
+            String[] rowData = new String[] {
+                    orgName,
+                    repoName,
+                    String.valueOf(healthScore),
+                    String.valueOf(pushCount),
+                    String.valueOf(releaseCount),
+                    String.valueOf(contributorCount),
+                    String.valueOf(issueOpenedAvg)
+            };
             return rowData;
 
         }).collect(Collectors.toList());
@@ -82,7 +99,7 @@ public class Top1000HealthiesRepoReport {
         LOGGER.info(String.format("CSV output path: %s", filePath));
         LOGGER.info(String.format("Write %d row(s)", csvData.size()));
 
-        String[] header = new String[] {"Org", "RepoName", "HealthScore", "Commits", "Releases", "Contributors"};
+        String[] header = new String[] {"Org", "RepoName", "HealthScore", "Commits", "Releases", "Contributors", "IssuseRemainOpen"};
         writer.writeToFile(filePath, csvData, header);
     }
 
@@ -93,10 +110,6 @@ public class Top1000HealthiesRepoReport {
         } else {
             return fullName;
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        new Top1000HealthiesRepoReport().run();
     }
 
 }

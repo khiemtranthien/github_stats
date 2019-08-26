@@ -34,7 +34,11 @@ public class AllEventIngestor {
     }
 
     public static void main(String[] args) {
-        new AllEventIngestor().run();
+        try {
+            new AllEventIngestor().run();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     private Callable<String> callable(String fileName) {

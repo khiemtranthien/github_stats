@@ -1,6 +1,13 @@
 db.getCollection('githubEvents').find({});
 db.getCollection('githubEvents').count();
 
+db.getCollection('githubEvents').createIndex( { "type": 1, "created_at": -1 } , {background: true});
+
+db.githubEvents.aggregate( [
+  {$match: {'type': 'PushEvent'}},
+  { $out : "pushEvent" }
+] );
+
 db.getCollection('githubEvents').find({
     'type': 'PushEvent'
     });

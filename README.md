@@ -1,37 +1,46 @@
 Project implementation
 ---
 * Extract JSON files, store needed event types to different MonggoDB collections (ex: PushEvent -> pushEvent collection)
-    * If store all events in one collection, it takes too long to query and it may overflow memory sometimes 
+    * If store all events in one collection, it takes too long to query and it may overflow memory 
+    * Note: should run for a small date range because the ingestion also take long time
 
-* There is a collection stores repo's info which will be used to loop for each to get its statistic (ex total pushes, total release, etc per repo)
+* Github repo's info is stored in a new collection, which will be used to collect its statistic (ex total pushes, total release, etc)
     * Repo info is extracted from PushEvent. A repo doesn't have any push will have no statistic
-    * Use repoId (in where statement) to collect its statistic instead of running a query group by repo.id is 
-    because it's take long time to run the query and transfer the data to Java process (there are about 2.7 million repos)
+    
+* Repo's statistic is also stored in a new collection. It's a base collection used to calculate repo health and generate the report
+    * Use repoId (in where statement) to collect its statistic from event collections instead of running a query group by repo.id,
+    because it takes long time to run the query and transfer the data to Java process (there are about 2.7 million repos)
 
-* There is a collection to store repo's statistic. It's a base collection used to calculate repo health
 
-* CSV report will get health score from repo statistic collection, sort and export to file
+* The idea for implementing this project is break down big task to smaller tasks
+    * One task consumes less memory, disk space and takes shorter time to finish
+    * Running independent to each other (can re-run at any step), be testable
+    * Whole process may take longer to complete but it's monitorable, we know that it's still running well
 
 Health score formula
 --- 
 
-health_score = push_count/max_push * release_count/max_release * contributor_count/max_contributor
+health_score = 
+    push_count / max_push * 
+    release_count / max_release * 
+    contributor_count / max_contributor *
+    issue_open_time / min_open_time
 
 Setup & run
 ---
-1. Clone project, open app.properties, create **zip**, **download** and **json** folder
-2. Use: wget https://data.gharchive.org/2019-08-18-{0..23}.json.gz
+1. Clone project, open *app.properties* in **resources** folder, create **zip**, **download** and **json** folder
+2. Use: wget https://data.gharchive.org/2019-08-18-{0..23}.json.gz to download data
 3. Download data for last 30 days (ex: 2019-07-20 to 2019-08-20) to **zip** folder
 4. Can use download_archive_files.sh
 5. Ingest event data to DB:
-    * Update *datasource/EventTypeIngestor.java* **main** function the eventType and the date range to ingest
-    * Note: don't set the range too long, json file extracted will consume all your disk space
+    * Update dateFrom and dateTo in *app.properties file* 
+    * Run *datasource/EventTypeIngestor.java* to run the ingestion
     
-6. After the ingest data complete, create index for each collection in Monggo DB
-7. Update date range in **main** and run *datasource/GitRepoIngestor.java* to ingest Git Repo info 
+6. After the ingest data complete, **create index** for each collection in Monggo DB. Refer: *mongodb_scripts/monggo_ddl.js*
+7. Run *datasource/GitRepoIngestor.java* to collect Git repo's info 
 8. Run *mining/GitRepoStatsMiner.java* to mining repo statistic like total push, release, contributor, etc
 9. Run *mining/RepoHealthMiner.java* to calculate repo health score
-10. Run *report/RepoHealthReport.java* to get top healthiest repos in CSV format (change the size in *app.properties* file)
+10. Run *report/RepoHealthReport.java* to generate top healthiest repos report in CSV format. Check result in **csv_reports** folder
 
 Tech stack
 ---
@@ -41,19 +50,22 @@ Tech stack
 Technical decisions
 --
 * Why to choose MongoDB:
-    * Flexible schema helps me to adapt with a number of different event payload structures
+    * Flexible schema adapts to a number of different event payload structures easily
     * Be a good choice to store JSON-like data
-    * Easy to setup and fit with my laptop storage and RAM
+    * Easy to setup and fit with my laptop storage and memory
     
 * Why is Java 8:
     * Java 7 is deprecated soon
     * Java 8 have big improvements on code syntax: lambda, stream, 
-        instant date, concurrency (executor), javascript engine (nashorn), etc, which helps me code more quickly
+        instant date, concurrency (executor), javascript engine (nashorn), etc, which helps me code more quickly and efficiently
     
 
 Need to improve
 ---
-* Add unit test
-* Consider restructure class implementation with interface to support mock test
-* Add dependency injection to manage repo objects to de-coupling between classes
-* Move some hard-code number/string to config file
+* Features:
+    * Add more metric to make the health score more sense
+    
+* Code:
+    * Add unit test
+    * Consider restructure class implementation with interface to support mock test
+    * Add dependency injection to manage repo objects to de-coupling between classes

@@ -34,20 +34,27 @@ public class EventTypeIngestor {
     MongoBaseRepo repo;
 
     public static void main(String[] args) {
-        EventTypeIngestor app = new EventTypeIngestor();
-        List<String> ingestEvents = Arrays.asList(
-                Constants.RELEASE_EVENT,
-                Constants.PUSH_EVENT,
-                Constants.FORK_EVENT,
-                Constants.ISSUES_EVENT,
-                Constants.PULL_REQUEST_EVENT,
-                Constants.PULL_REQUEST_REVIEW_COMMENT_EVENT
-        );
+        try {
+            EventTypeIngestor app = new EventTypeIngestor();
+            List<String> ingestEvents = Arrays.asList(
+                    Constants.RELEASE_EVENT,
+                    Constants.PUSH_EVENT,
+                    Constants.FORK_EVENT,
+                    Constants.ISSUES_EVENT,
+                    Constants.PULL_REQUEST_EVENT,
+                    Constants.PULL_REQUEST_REVIEW_COMMENT_EVENT
+            );
 
-        for(String eventType: ingestEvents) {
-            String dateFrom = "2019-08-15";
-            String dateTo = "2019-08-17";
-            app.run(eventType, dateFrom, dateTo);
+            AppProperties appConfig = AppProperties.getInstance();
+            for(String eventType: ingestEvents) {
+                String dateFrom = appConfig.get("data.dateFrom");  // 2019-08-16
+                String dateTo = appConfig.get("data.dateTo");  // 2019-08-17
+
+                app.run(eventType, dateFrom, dateTo);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
     }
 

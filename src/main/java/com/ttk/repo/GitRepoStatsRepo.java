@@ -57,13 +57,27 @@ public class GitRepoStatsRepo extends MongoBaseRepo {
         return max;
     }
 
+    public Double getMinIssueOpenTiem() throws ScriptException, NoSuchMethodException {
+
+        List<Document> pipeline = parseQueryString("repoStats.js", "GetMinIssueOpenTime", null);
+
+        LOGGER.debug(String.format("Pipeline %s", pipeline));
+
+        List<Document> result = aggregation(pipeline);
+
+        Document row = result.get(0);
+        Double min = row.getDouble("min");
+
+        return min;
+    }
+
     public List<Document> getTopHealthiestRepo(Integer size) {
         FindIterable<Document> queryIterator = collection.find().sort(new Document("health_score", -1)).limit(size);
         return getResponse(queryIterator.iterator());
     }
 
     public static void main(String[] args) throws ScriptException, NoSuchMethodException {
-        Integer result = new GitRepoStatsRepo().getMaxContributorCount();
+        Number result = new GitRepoStatsRepo().getMinIssueOpenTiem();
         LOGGER.info(result);
     }
 

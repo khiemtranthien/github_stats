@@ -1,4 +1,4 @@
-function IssueOpened() {
+function IssueOpenedCreated() {
     var query = [
         {"$match" : {"repo.id" : { $in: ["%(repoIds)"] }, "payload.action": {"$eq": "opened"} }},
         {
@@ -12,8 +12,8 @@ function IssueOpened() {
     return JSON.stringify(query);
 }
 
-function IssueNotOpened() {
-    var TotalPushByRepoIdQuery = [
+function IssueNonOpenedCreated() {
+    var query = [
          {"$match" : {"repo.id" : { $in: ["%(repoIds)"] }, "payload.action": {"$ne": "opened"} }},
          {
              $group : {
@@ -23,5 +23,5 @@ function IssueNotOpened() {
          },
      ];
 
-     return JSON.stringify(TotalPushByRepoIdQuery);
+     return JSON.stringify(query);
  }

@@ -21,3 +21,12 @@ function GetMaxContributor() {
 
      return JSON.stringify(query);
 }
+
+function GetMinIssueOpenTime() {
+    var query = [
+         { $match: {"issue_opened_avg": {"$gt": 0.0}}},
+         { $group : { _id: null, min: { $min : "$issue_opened_avg" }}}
+     ];
+
+     return JSON.stringify(query);
+}

@@ -8,10 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 
 import javax.script.ScriptException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -24,6 +21,7 @@ public class GitRepoStatsMiner extends BaseMiner {
     PushEventRepo pushEventRepo;
     ReleaseEventRepo releaseEventRepo;
     ForkEventRepo forkEventRepo;
+    IssuesEventRepo issuesEventRepo;
 
     public GitRepoStatsMiner() {
         super();
@@ -34,10 +32,16 @@ public class GitRepoStatsMiner extends BaseMiner {
         releaseEventRepo = new ReleaseEventRepo();
         forkEventRepo = new ForkEventRepo();
         gitRepoRepo = new GitRepoRepo();
+        issuesEventRepo = new IssuesEventRepo();
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        new GitRepoStatsMiner().run();
+    public static void main(String[] args) {
+        try {
+            new GitRepoStatsMiner().run();
+
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     public void run() throws InterruptedException {
@@ -95,6 +99,7 @@ public class GitRepoStatsMiner extends BaseMiner {
                 Map<Integer, Integer> pushMap = countPush(repoIds);
                 Map<Integer, Integer> releaseMap = countRelease(repoIds);
                 Map<Integer, Integer> contributorMap = countContributor(repoIds);
+                Map<Integer, Double> averageIssueOpenTimeMap = calculateIssueAverageOpenTime(repoIds);
 
                 repoPartition.forEach(doc -> {
                     Integer repoId = (Integer)doc.get("id");
@@ -102,6 +107,7 @@ public class GitRepoStatsMiner extends BaseMiner {
                     repoStats.append("push", pushMap.get(repoId));
                     repoStats.append("release", releaseMap.get(repoId));
                     repoStats.append("contributor", contributorMap.get(repoId));
+                    repoStats.append("issue_opened_avg", averageIssueOpenTimeMap.get(repoId));
 
                     gitRepoStatsRepo.upsert(repoStats);
                 });
@@ -165,5 +171,16 @@ public class GitRepoStatsMiner extends BaseMiner {
             }
         });
         return retMap;
+    }
+
+    private Map<Integer, Double> calculateIssueAverageOpenTime(List<Integer> repoIds) throws ScriptException, NoSuchMethodException {
+        Map<Integer, Double> averageMap = issuesEventRepo.getAverageIssueStayOpened(repoIds);
+        repoIds.forEach(repoId -> {
+            if(!averageMap.containsKey(repoId)) {
+                averageMap.put(repoId, (double) 0);
+            }
+        });
+
+        return averageMap;
     }
 }

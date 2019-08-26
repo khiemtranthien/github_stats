@@ -21,25 +21,39 @@ public class RepoHealthMiner extends BaseMiner {
         gitRepoStatsRepo = new GitRepoStatsRepo();
     }
 
-    public static void main(String[] args) throws InterruptedException, ScriptException, NoSuchMethodException {
-        new RepoHealthMiner().run();
+    public static void main(String[] args) {
+        try {
+            new RepoHealthMiner().run();
+
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     public void run() throws InterruptedException, ScriptException, NoSuchMethodException {
          /* For each repo, health score formula:
-        health_score = push_count/max_push * release_count/max_release * contributor_count/max_contributor
+            health_score =
+                push_count / max_push *
+                release_count / max_release *
+                contributor_count / max_contributor *
+                issue_open_time / min_open_time
          */
 
         Integer maxPush = gitRepoStatsRepo.getMaxPushCount();
         Integer maxRelease = gitRepoStatsRepo.getMaxReleaseCount();
         Integer maxContributor = gitRepoStatsRepo.getMaxContributorCount();
+        Double minIssueOpenTime = gitRepoStatsRepo.getMinIssueOpenTiem();
 
-        Map<String, Integer> maxParamsMap = new HashMap<>();
-        maxParamsMap.put("maxPush", maxPush);
-        maxParamsMap.put("maxRelease", maxRelease);
-        maxParamsMap.put("maxContributor", maxContributor);
+        Map<String, Number> baseParamsMap = new HashMap<>();
+        baseParamsMap.put("maxPush", maxPush);
+        baseParamsMap.put("maxRelease", maxRelease);
+        baseParamsMap.put("maxContributor", maxContributor);
+        baseParamsMap.put("minIssueOpenTime", minIssueOpenTime);
 
-        LOGGER.info(String.format("Max Push: %d, Max Release: %d, Max Contributor: %d", maxPush, maxRelease, maxContributor));
+        LOGGER.info(String.format("Max Push: %d, " +
+                "Max Release: %d, " +
+                "Max Contributor: %d, " +
+                "Min issue open time: %.2f", maxPush, maxRelease, maxContributor, minIssueOpenTime));
 
         Document where = null;  // set where = null to get all rows
         FindIterable allRepos = gitRepoStatsRepo.iterableGet(where);
@@ -52,7 +66,7 @@ public class RepoHealthMiner extends BaseMiner {
         while(cursor.iterator().hasNext()) {
             List<Document> items = gitRepoStatsRepo.getResponse(cursor.iterator());
 
-            calculateHealthScore(items, maxParamsMap);
+            calculateHealthScore(items, baseParamsMap);
 
             cursor = allRepos.skip(pageSize * page).limit(pageSize);
 
@@ -64,12 +78,12 @@ public class RepoHealthMiner extends BaseMiner {
         shutdownExecutor();
     }
 
-    private void calculateHealthScore(List<Document> repos, Map<String, Integer> maxParamsMap) throws InterruptedException {
+    private void calculateHealthScore(List<Document> repos, Map<String, Number> baseParamsMap) throws InterruptedException {
         List<List<Document>> partitions = ListUtils.partition(repos, 100);
 
         List<Callable<String>> callables = new ArrayList<>();
         for (List<Document> partition : partitions) {
-            callables.add(callable(partition, maxParamsMap));
+            callables.add(callable(partition, baseParamsMap));
         }
 
         executor.invokeAll(callables)
@@ -85,23 +99,30 @@ public class RepoHealthMiner extends BaseMiner {
                 .forEach(LOGGER::info);
     }
 
-    private Callable<String> callable(List<Document> repoPartition, Map<String, Integer> maxParamsMap) {
+    private Callable<String> callable(List<Document> repoPartition, Map<String, Number> baseParamsMap) {
         return () -> {
             LOGGER.info(String.format("Calculate partition %d repo(s)", repoPartition.size()));
 
-            Integer maxPush = maxParamsMap.get("maxPush");
-            Integer maxRelease = maxParamsMap.get("maxRelease");
-            Integer maxContributor = maxParamsMap.get("maxContributor");
+            Integer maxPush = (Integer) baseParamsMap.get("maxPush");
+            Integer maxRelease = (Integer) baseParamsMap.get("maxRelease");
+            Integer maxContributor = (Integer) baseParamsMap.get("maxContributor");
+            Double minIssueOpenTime = (Double) baseParamsMap.get("minIssueOpenTime");
 
             try {
                 repoPartition.forEach(doc -> {
+                    Integer repoId = (Integer)doc.get("id");
+                    LOGGER.debug(repoId);
+
                     Integer push = (Integer)doc.get("push");
                     Integer release = (Integer)doc.get("release");
                     Integer contributor = (Integer)doc.get("contributor");
+                    Double issueOpened = (Double)doc.get("issue_opened_avg");
 
-                    Double healthScore = push/(double)maxPush * release/(double)maxRelease * contributor/(double)maxContributor;
-
-                    Integer repoId = (Integer)doc.get("id");
+                    Double healthScore =
+                            push/(double)maxPush *
+                            release/(double)maxRelease *
+                            contributor/(double)maxContributor *
+                            issueOpened / minIssueOpenTime;
 
                     Document updatedStats = new Document("id", repoId);
                     updatedStats.append("health_score", healthScore);
@@ -112,6 +133,7 @@ public class RepoHealthMiner extends BaseMiner {
 
             } catch (Exception e) {
                 LOGGER.error(e);
+                e.printStackTrace();
                 return String.format("Calculate failed. Error: %s", e.getMessage());
             }
             return String.format("Calculate %d repo(s) successfully", repoPartition.size());

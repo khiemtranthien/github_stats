@@ -39,10 +39,17 @@ public class GitRepoIngestor {
     }
 
     public static void main(String[] args) {
-        String dateFrom = "2019-08-18";
-        String dateTo = "2019-08-20";
+        try {
+            AppProperties appConfig = AppProperties.getInstance();
 
-        new GitRepoIngestor().run(dateFrom, dateTo);
+            String dateFrom = appConfig.get("data.dateFrom");  // 2019-08-16
+            String dateTo = appConfig.get("data.dateTo");  // 2019-08-17
+
+            new GitRepoIngestor().run(dateFrom, dateTo);
+
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 
     private Callable<String> callable(String jsonFileName, String eventType) {
